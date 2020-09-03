@@ -1,0 +1,57 @@
+CREATE EXTERNAL TABLE tpch.customer (
+    custkey int,
+    name varchar(25),
+    address varchar(25),
+    city varchar(10),
+    nation varchar(15),
+    region varchar(12),
+    phone varchar(15),
+    mktsegment varchar(10)
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.supplier (
+    suppkey int,
+    name varchar(25),
+    address varchar(25),
+    city varchar(10),
+    nation varchar(15),
+    region varchar(12),
+    phone varchar(15)
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.part (
+    partkey int,
+    name varchar(22),
+    mfgr varchar(6),
+    category varchar(7),
+    brand1 varchar(9),
+    color varchar(11),
+    type varchar(25),
+    size int,
+    container varchar(10)
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.date_dim (
+    datekey int,
+    datestandard varchar(10),
+    `date` varchar(18),
+    weeknuminyear int,
+    monthnuminyear int,
+    `year` int,
+    daynuminmonth int,
+    yearmonthnum int,
+    yearmonth varchar(7)
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.time_dim (timekey varchar(4), hour int, minutes int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.lineorder (
+    orderkey int,
+    linenumber int,
+    custkey int,
+    partkey int,
+    suppkey int,
+    orderdate int,
+    orderpriority varchar(15),
+    shippriority varchar(1),
+    quantity float,
+    extendedprice float,
+    ordertotalprice float,
+    discount float,
+    revenue float,
+    supplycost float,
+    tax float,
+    commitdate int,
+    shipmode varchar(10)
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';
+
