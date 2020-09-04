@@ -4,3 +4,4 @@ venv/
 !.gitignore
 !.git*
 ./idea/
+__pycache__/
