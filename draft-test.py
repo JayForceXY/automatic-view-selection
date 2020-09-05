@@ -1,6 +1,8 @@
 
 import query_mapping
 import sqlparse
+import query_binary_mapping
+import TPCH_DDL
 fd = open ( 'batch_queries2.sql', 'r' )
 sqlFile = fd.read ()
 
@@ -8,6 +10,7 @@ commands = sqlparse.split ( sqlFile )
 for command in commands:
     print(query_mapping.sql_to_la(command))
 
+print(query_binary_mapping.binary_mapping_table(table_attributes=TPCH_DDL.LINEORDER_ATTRIBUTES, r_attributes = ['shipmode','quantity']))
 
 
 # sql = 'select * from "someschema"."mytable" where id = 1'
