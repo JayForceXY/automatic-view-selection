@@ -2,13 +2,18 @@ import sqlparse
 
 
 def get_ranges_from_where_statement( wherestatement ) :
-    tmp_str = wherestatement.split ( ' ' )  # This is to split any space
+    #This function gets the predicate attributes from the where statement
+    #The assumption is that operator,attribute and value of predicate are separated with one space
+
+
+    OPERATORS = ['=', '>', '<', '>=', '<=', 'in', 'not', 'between', 'is null', 'is not null', 'like',
+                              'exists', '!=', '<>']
+    tmp_str = wherestatement.split ( )  # This is to split any space
     i = 0
     rgq = []
     for stmt in tmp_str :
         # This IF statement is to identify when COMPARAISON OPERTATOR is found, then stores the column before it
-        if stmt.lower ( ) in ['=', '>', '<', '>=', '<=', 'in', 'not', 'between', 'is null', 'is not null', 'like',
-                              'exists', '!=', '<>'] :
+        if stmt.lower ( ) in  OPERATORS:
             rgq.append ( tmp_str[i - 1] )
         i += 1
 
@@ -66,3 +71,31 @@ def sql_to_la( sqlquery ) :
     rgq = get_ranges_from_where_statement ( rgq[0] )
 
     return prq, jnq, rgq
+
+
+
+def find_similar_queries (query_set):
+
+    #for every query in the set, hash the value of join tables sorted by alphabetical order
+    #Store similar queries in the
+    mapping_similarity = dict()
+    i=0
+    for query in query_set :
+
+        joined_tables = sorted(query[1])
+
+        tables_joined = ''
+
+        for table in joined_tables :
+            st = table.split ( )[0]
+
+            tables_joined += st
+
+        if hash ( tables_joined ) in mapping_similarity :
+            mapping_similarity[hash ( tables_joined )].append ( i )
+        else :
+            mapping_similarity[hash ( tables_joined )] = [i]
+        i += 1
+    return mapping_similarity
+
+
