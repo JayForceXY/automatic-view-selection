@@ -1,5 +1,5 @@
 import sqlparse
-
+import TPCH_DDL
 
 def get_ranges_from_where_statement( wherestatement ) :
     #This function gets the predicate attributes from the where statement
@@ -30,10 +30,12 @@ def sql_to_la( sqlquery ) :
     join = False
     restricton = False
     table_select= False
-    prq = []
+
+    prq = [] #projection variables
     tbq = []
-    jnq = []
-    rgq = []
+    jnq = [] #Join tables
+    rgq = [] #Attributes in predicate
+
     # DEFINING AGGREGATION, JOINS, RANGES AND PROJECTIONS DEPENDING ON TOKEN VALUE
 
     for token in tokenized.tokens :
@@ -98,4 +100,88 @@ def find_similar_queries (query_set):
         i += 1
     return mapping_similarity
 
+def view_definition(queries):
+    query_set = [sql_to_la(querie) for querie in queries] # Transform every Query into list of prj[] jnq[] rgq[]
+    similar_queries = find_similar_queries(query_set)  # Hashes Queries and maps similar queries to lists
+    similar_queries_indexes = similar_queries.values() #Returns a list ( List (similar queries indexes ) )
 
+
+    views = []
+
+    for  similar_queries_index in similar_queries_indexes :
+        view_jnq = []
+        view_prq = []
+        view_rgq = []
+        for q in similar_queries_index:
+            tmp_view_prq, tmp_view_jnq,tmp_view_rgq = query_set[q]
+
+
+            if tmp_view_prq:
+                items = tmp_view_prq[0].split(',')
+            for item in items:
+                # print('item ==', item)
+                if item not in view_prq : view_prq.append(item)
+
+            if tmp_view_jnq :
+                items = tmp_view_jnq
+            for item in items :
+                if item not in view_jnq : view_jnq.append ( item )
+
+            if tmp_view_rgq:
+
+
+                items = tmp_view_rgq
+
+            for item in items :
+                if item not in view_rgq : view_rgq.append ( item )
+
+        views.append([view_prq,view_jnq,view_rgq])
+
+    return views
+
+def combine(list1, list2):
+    output =[]
+    for element in list1:
+        output.append(list1)
+    for element in list2:
+        if element not in output :
+            output.append(list2)
+    return output
+
+
+
+def view_creation (views_definition):
+    select_statement = []
+    join_statement = []
+    SQL=[]
+    for view in views_definition:
+       join_statement = [item.strip() for item in view[1]]
+       select_statement=view[0] + view[2]
+       select_statement=[item.strip() for item in select_statement]
+       SQL.append ( [sorted(select_statement), sorted(join_statement)] )
+
+
+    return SQL
+
+
+def join_key_statement ( join_table):
+        tables = join_table.split(',')
+        statement =''
+        for table in tables:
+            table = " ".join(table.split())
+            table_name = table.split(' ')[0]
+
+            #THE CONVENTION IS THAT EACH TABLE IS REFERENCED BY ITS FIRST LETTER AS A CONVENTION
+            key = TPCH_DDL.TPCH_DATABASE[table_name][0]
+            statement += ' join ' + table_name +' '+table_name[0]+  ' on ' +'lo.'+key+ ' = ' + table_name[0]+'.'+key
+
+        return statement
+
+
+def view_sql_code (view_statements):
+    select_arguments = ','.join ( view_statements[0] )
+    join_arguments = ','.join ( view_statements[1] )
+    sql_code = 'select ' + select_arguments + ' from lineorder lo '
+    if join_arguments :
+        sql_code+=join_key_statement(join_arguments)
+    return sql_code
