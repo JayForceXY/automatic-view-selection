@@ -8,7 +8,7 @@ select sum(lo.revenue), d.year, p.brand1 from lineorder lo join date_dim d on lo
 
 select sum(lo.revenue), d.year, p.brand1 from lineorder lo join date_dim d on lo.orderdate = d.datekey join part p on lo.partkey = p.partkey join supplier s on lo.suppkey = s.suppkey where p.brand1 between 'MFGR#2221' and 'MFGR#2228' and s.region = 'ASIA' group by d.year, p.brand1 order by d.year, p.brand1; 
 
-select sum(lo.revenue), d.year, p.brand1 from lineorder lo join date_dim d on lo.orderdate = d.datekey join part p on lo.partkey = p.partkey join supplier s on lo.suppkey = s.suppkey where p.brand1 = 'MFGR#2221' and s.region = 'EUROPE' group by d.year, p.brand1 order by d.year, p.brand1; 
+select sum(lo.revenue), d.year, p.brand1 from lineorder lo join date_dim d on lo.orderdate = d.datekey join part p on lo.partkey = p.partkey join supplier s on lo.suppkey = s.suppkey where p.brand1  =  'MFGR#2221' and s.region = 'EUROPE' group by d.year, p.brand1 order by d.year, p.brand1; 
 
 select sum(lo.revenue), d.year, p.brand1 from lineorder lo join supplier s on lo.suppkey = s.suppkey join date_dim d on lo.orderdate = d.datekey join part p on lo.partkey = p.partkey  where p.brand1 = 'MFGR#2221' and s.region = 'EUROPE' and s.nation = 'SWEDEN' group by d.year, p.brand1 order by d.year, p.brand1;
 
@@ -24,12 +24,4 @@ select d.year, c.nation, sum(lo.revenue - lo.supplycost) as profit from lineorde
 
 select d.year, s.nation, p.category, sum(lo.revenue - lo.supplycost) as profit from lineorder lo join date_dim d on lo.orderdate = d.datekey join customer c on lo.custkey = c.custkey join supplier s on lo.suppkey = s.suppkey join part p on lo.partkey = p.partkey where c.region = 'AMERICA' and s.region = 'AMERICA' and ( d.year = 1997 or d.year = 1998 ) and ( p.mfgr = 'MFGR#1' or p.mfgr = 'MFGR#2' ) group by d.year, s.nation, p.category order by d.year, s.nation, p.category; 
 
-select d.year, s.city, p.brand1, sum(lo.revenue - lo.supplycost) as profit from lineorder lo join date_dim d on lo.orderdate = d.datekey join customer c on lo.custkey = c.custkey join supplier s on lo.suppkey = s.suppkey join part p on lo.partkey = p.partkey where c.region = 'AMERICA' and s.nation = 'UNITED STATES' and ( d.year = 1997 or d.year = 1998 ) and p.category = 'MFGR#14' group by d.year, s.city, p.brand1 order by d.year, s.city, p.brand1; 
-
-
-
-SELECT * 
-   FROM CUSTOMERS 
-   WHERE ID IN (SELECT ID 
-         FROM EMPLOUYEES 
-         WHERE SALARY > 4500) ;
+select d.year, s.city, p.brand1, sum(lo.revenue - lo.supplycost) as profit from lineorder lo join date_dim d on lo.orderdate = d.datekey join customer c on lo.custkey = c.custkey join supplier s on lo.suppkey = s.suppkey join part p on lo.partkey = p.partkey where c.region = 'AMERICA' and s.nation = 'UNITED STATES' and ( d.year = 1997 or d.year = 1998 ) and p.category = 'MFGR#14' group by d.year, s.city, p.brand1 order by d.year, s.city, p.brand1;
