@@ -137,10 +137,11 @@ def view_definition(queries):
 
         views.append([view_prq,view_jnq,view_rgq])
 
-    return views
+    return [query_set,similar_queries,views]
 
 def combine(list1, list2):
     output =[]
+
     for element in list1:
         output.append(list1)
     for element in list2:
@@ -151,6 +152,7 @@ def combine(list1, list2):
 
 
 def view_creation (views_definition):
+
     select_statement = []
     join_statement = []
     SQL=[]
@@ -158,6 +160,7 @@ def view_creation (views_definition):
        join_statement = [item.strip() for item in view[1]]
        select_statement=view[0] + view[2]
        select_statement=[item.strip() for item in select_statement]
+       select_statement = list(dict.fromkeys(select_statement)) #Eliminate duplication
        SQL.append ( [sorted(select_statement), sorted(join_statement)] )
 
 
@@ -173,15 +176,44 @@ def join_key_statement ( join_table):
 
             #THE CONVENTION IS THAT EACH TABLE IS REFERENCED BY ITS FIRST LETTER AS A CONVENTION
             key = TPCH_DDL.TPCH_DATABASE[table_name][0]
-            statement += ' join ' + table_name +' '+table_name[0]+  ' on ' +'lo.'+key+ ' = ' + table_name[0]+'.'+key
+            if key.lower() == 'datekey':
+                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.orderdate' +' = ' + table_name[
+                    0] + '.' + key
+            else :
+                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.' + key + ' = ' + table_name[
+                    0] + '.' + key
+
 
         return statement
 
+def select_statement (select_def ):
+    tmp = ''
+    for column in select_def :
+        seprator = (' , ', '  ')[column == select_def[-1]]
+        if not is_aggregation_op(column):
+
+            tmp+= column + ' as '+ column.replace('.','_')+seprator #Care if last item you need to remove ,
+        else:
+            tmp+=column+seprator
+    return tmp
+
+
+def is_aggregation_op ( statement ):
+    tmp = statement.split('(')
+    return( tmp[0].lower() in ['sum','min','max','avg','count'] )
+
+
 
 def view_sql_code (view_statements):
-    select_arguments = ','.join ( view_statements[0] )
+
+    select_arguments = select_statement(view_statements[0])
     join_arguments = ','.join ( view_statements[1] )
     sql_code = 'select ' + select_arguments + ' from lineorder lo '
+    groupby_statement = [element for element in view_statements[0] if(not is_aggregation_op(element))]
+    groupby_statement = sorted(list(dict.fromkeys(groupby_statement)))
+    groupby_statement = ','.join(groupby_statement)
+
     if join_arguments :
         sql_code+=join_key_statement(join_arguments)
+    sql_code+=' group by ' + groupby_statement
     return sql_code
