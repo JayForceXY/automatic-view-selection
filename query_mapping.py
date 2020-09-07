@@ -1,6 +1,8 @@
 import sqlparse
 import TPCH_DDL
 
+
+#This function gets a where statement and extracts the columns used
 def get_ranges_from_where_statement( wherestatement ) :
     #This function gets the predicate attributes from the where statement
     #The assumption is that operator,attribute and value of predicate are separated with one space
@@ -21,7 +23,7 @@ def get_ranges_from_where_statement( wherestatement ) :
 
     return rgq
 
-
+#This function uses sqlparse to parse sql statement and extract projections, restrictions and joins.
 def sql_to_la( sqlquery ) :
     #sql.parse returns a series of tokens
     parsed = sqlparse.parse ( sqlquery )
@@ -75,7 +77,7 @@ def sql_to_la( sqlquery ) :
     return prq, jnq, rgq
 
 
-
+#This function gets a query set, hashes queries based on join tables, and returns a dictionary hash -> similar queries index from query set
 def find_similar_queries (query_set):
 
     #for every query in the set, hash the value of join tables sorted by alphabetical order
@@ -100,13 +102,18 @@ def find_similar_queries (query_set):
         i += 1
     return mapping_similarity
 
-def view_definition(queries):
+#This function takes queries set, find similar queries and creates 2 dictionnaries dict1 maps view_name ->[similar_queries_index] dict2 view_name ->[union of similar queries ]
+
+def queries_view_mapping( queries ):
     query_set = [sql_to_la(querie) for querie in queries] # Transform every Query into list of prj[] jnq[] rgq[]
     similar_queries = find_similar_queries(query_set)  # Hashes Queries and maps similar queries to lists
     similar_queries_indexes = similar_queries.values() #Returns a list ( List (similar queries indexes ) )
-
-
+    views_and_queries = []
     views = []
+    view_name=''
+    view_name_view_definition_mapper = dict()
+    view_name_view_queries_mapper = dict()
+    i = 0
 
     for  similar_queries_index in similar_queries_indexes :
         view_jnq = []
@@ -136,8 +143,12 @@ def view_definition(queries):
                 if item not in view_rgq : view_rgq.append ( item )
 
         views.append([view_prq,view_jnq,view_rgq])
+        view_name = 'View'+ str(i)
+        i+=1
+        view_name_view_definition_mapper[view_name] = [view_prq,view_jnq,view_rgq]
+        view_name_view_queries_mapper[view_name] = similar_queries_index
 
-    return [query_set,similar_queries,views]
+    return [view_name_view_definition_mapper,view_name_view_queries_mapper]
 
 def combine(list1, list2):
     output =[]
@@ -151,20 +162,27 @@ def combine(list1, list2):
 
 
 
-def view_creation (views_definition):
+def view_statements_definition_creation ( view_name_view_definition_mapper ):
+
 
     select_statement = []
     join_statement = []
-    SQL=[]
-    for view in views_definition:
-       join_statement = [item.strip() for item in view[1]]
-       select_statement=view[0] + view[2]
+    SQL = []
+
+
+    for view_name,view_definition in view_name_view_definition_mapper.items():
+
+       join_statement = [item.strip() for item in view_definition[1]]
+       select_statement=view_definition[0] + view_definition[2]
        select_statement=[item.strip() for item in select_statement]
        select_statement = list(dict.fromkeys(select_statement)) #Eliminate duplication
        SQL.append ( [sorted(select_statement), sorted(join_statement)] )
+       view_name_view_definition_mapper[view_name] = SQL
+       select_statement = []
+       join_statement = []
+       SQL = []
 
-
-    return SQL
+    return view_name_view_definition_mapper
 
 
 def join_key_statement ( join_table):
@@ -204,16 +222,19 @@ def is_aggregation_op ( statement ):
 
 
 
-def view_sql_code (view_statements):
+def view_sql_code (view_name_view_definition_mapper):
+    for view_name, view_statements in view_name_view_definition_mapper.items():
+        sql_code='create materialized view '+view_name +' as '
 
-    select_arguments = select_statement(view_statements[0])
-    join_arguments = ','.join ( view_statements[1] )
-    sql_code = 'select ' + select_arguments + ' from lineorder lo '
-    groupby_statement = [element for element in view_statements[0] if(not is_aggregation_op(element))]
-    groupby_statement = sorted(list(dict.fromkeys(groupby_statement)))
-    groupby_statement = ','.join(groupby_statement)
+        select_arguments = select_statement(view_statements[0][0])
+        join_arguments = ','.join ( view_statements[0][1] )
+        sql_code += 'select ' + select_arguments + ' from lineorder lo '
+        groupby_statement = [element for element in view_statements[0][0] if(not is_aggregation_op(element))]
+        groupby_statement = sorted(list(dict.fromkeys(groupby_statement)))
+        groupby_statement = ','.join(groupby_statement)
 
-    if join_arguments :
-        sql_code+=join_key_statement(join_arguments)
-    sql_code+=' group by ' + groupby_statement
-    return sql_code
+        if join_arguments :
+            sql_code+=join_key_statement(join_arguments)
+        sql_code+=' group by ' + groupby_statement
+        view_name_view_definition_mapper[view_name] = sql_code
+    return view_name_view_definition_mapper

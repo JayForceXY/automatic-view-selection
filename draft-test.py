@@ -13,15 +13,16 @@ commands = sqlparse.split ( sqlFile )
 commands = [x for x in commands if x] #remove empty files
 query_set = [query_mapping.sql_to_la(command) for command in commands]
 
-x,y,views = query_mapping.view_definition(commands)
-print(commands[2] ,'\n',commands[3], '\n',commands[9] ,'\n',commands[13])
-SQL = query_mapping.view_creation(views)
+views,x = query_mapping.queries_view_mapping( commands )
 
-for stmt in SQL :
-
-     print(query_mapping.view_sql_code(stmt))
+SQL = query_mapping.view_statements_definition_creation( views )
 
 
-
+for view_name, view_code in query_mapping.view_sql_code(SQL).items():
+     print(view_name)
+     print(view_code)
+     print('====')
+     for query in x[view_name] :
+          print(commands[query])
 fd.close()
 
