@@ -24,7 +24,7 @@ def get_ranges_from_where_statement( wherestatement ) :
     return rgq
 
 #This function uses sqlparse to parse sql statement and extract projections, restrictions and joins.
-def sql_to_la( sqlquery ) :
+def sql_to_la( sqlquery , keep_where_statement = False) :
     #sql.parse returns a series of tokens
     parsed = sqlparse.parse ( sqlquery )
     tokenized = parsed[0]
@@ -72,7 +72,8 @@ def sql_to_la( sqlquery ) :
                 # get_ranges_from_where_statement( wherestatement ) gets ranges from it
                 rgq.append ( value_of_token )
 
-    rgq = get_ranges_from_where_statement ( rgq[0] )
+    if not keep_where_statement and rgq:
+        rgq = get_ranges_from_where_statement ( rgq[0] )
 
     return prq, jnq, rgq
 
@@ -148,7 +149,7 @@ def queries_view_mapping( queries ):
         view_name_view_definition_mapper[view_name] = [view_prq,view_jnq,view_rgq]
         view_name_view_queries_mapper[view_name] = similar_queries_index
 
-    return [view_name_view_definition_mapper,view_name_view_queries_mapper]
+    return [view_name_view_definition_mapper,view_name_view_queries_mapper,queries]
 
 def combine(list1, list2):
     output =[]
@@ -222,19 +223,30 @@ def is_aggregation_op ( statement ):
 
 
 
-def view_sql_code (view_name_view_definition_mapper):
+def view_sql_code (view_name_view_definition_mapper,view_name_view_queries_mapper,queries,use_predicate = False ):
     for view_name, view_statements in view_name_view_definition_mapper.items():
         sql_code='create materialized view '+view_name +' as '
 
         select_arguments = select_statement(view_statements[0][0])
         join_arguments = ','.join ( view_statements[0][1] )
         sql_code += 'select ' + select_arguments + ' from lineorder lo '
+        where = ('',' where ')[use_predicate]
+        if use_predicate:
+
+            for query in view_name_view_queries_mapper[view_name]:
+                z, y, rgq = sql_to_la ( queries[query], keep_where_statement=True )
+                for stmt in rgq :
+                    or_stmt = (' ', ' or ')[query != view_name_view_queries_mapper[view_name][-1]]
+                    stmt = stmt.replace(';', ' '  )
+                    where += '(' + stmt.replace ( 'where', '' ) + ')' + or_stmt
+
         groupby_statement = [element for element in view_statements[0][0] if(not is_aggregation_op(element))]
         groupby_statement = sorted(list(dict.fromkeys(groupby_statement)))
         groupby_statement = ','.join(groupby_statement)
 
         if join_arguments :
             sql_code+=join_key_statement(join_arguments)
-        sql_code+=' group by ' + groupby_statement
+        sql_code+= where+' group by ' + groupby_statement
         view_name_view_definition_mapper[view_name] = sql_code
+
     return view_name_view_definition_mapper
