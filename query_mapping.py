@@ -2,7 +2,7 @@ import sqlparse
 import TPCH_DDL
 
 
-#This function gets a where statement and extracts the columns used
+#This function gets a where statement and extracts the columns used - Internpreter
 def get_ranges_from_where_statement( wherestatement ) :
     #This function gets the predicate attributes from the where statement
     #The assumption is that operator,attribute and value of predicate are separated with one space
@@ -23,7 +23,7 @@ def get_ranges_from_where_statement( wherestatement ) :
 
     return rgq
 
-#This function uses sqlparse to parse sql statement and extract projections, restrictions and joins.
+#This function uses sqlparse to parse sql statement and extract projections, restrictions and joins - Interpreter
 def sql_to_la( sqlquery , keep_where_statement = False) :
     #sql.parse returns a series of tokens
     parsed = sqlparse.parse ( sqlquery )
@@ -78,7 +78,46 @@ def sql_to_la( sqlquery , keep_where_statement = False) :
     return prq, jnq, rgq
 
 
-#This function gets a query set, hashes queries based on join tables, and returns a dictionary hash -> similar queries index from query set
+#Translation of JOIN_COMPONENTS into SQL_CODE - Interpreter
+def join_key_statement ( join_table):
+        tables = join_table.split(',')
+        statement =''
+        for table in tables:
+            table = " ".join(table.split())
+            table_name = table.split(' ')[0]
+
+            #THE CONVENTION IS THAT EACH TABLE IS REFERENCED BY ITS FIRST LETTER AS A CONVENTION
+            key = TPCH_DDL.TPCH_DATABASE[table_name][0]
+            if key.lower() == 'datekey':
+                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.orderdate' +' = ' + table_name[
+                    0] + '.' + key
+            else :
+                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.' + key + ' = ' + table_name[
+                    0] + '.' + key
+
+
+        return statement
+#Translation of JOIN_COMPONENTS into SQL_CODE  - Interpreter
+def select_statement (select_def ):
+    tmp = ''
+    for column in select_def :
+        seprator = (' , ', '  ')[column == select_def[-1]]
+        if not is_aggregation_op(column):
+
+            tmp+= column + ' as '+ column.replace('.','_')+seprator #Care if last item you need to remove ,
+        else:
+            tmp+=column+seprator
+    return tmp
+
+#Checks if a statement is has an aggregation operation - Interpreter
+def is_aggregation_op ( statement ):
+    tmp = statement.split('(')
+    return( tmp[0].lower() in ['sum','min','max','avg','count'] )
+
+
+
+
+#This function gets a query set, hashes queries based on join tables, and returns a dictionary hash -> similar queries index from query set - Clustering
 def find_similar_queries (query_set):
 
     #for every query in the set, hash the value of join tables sorted by alphabetical order
@@ -103,8 +142,7 @@ def find_similar_queries (query_set):
         i += 1
     return mapping_similarity
 
-#This function takes queries set, find similar queries and creates 2 dictionnaries dict1 maps view_name ->[similar_queries_index] dict2 view_name ->[union of similar queries ]
-
+#This function takes queries set, find similar queries and creates 2 dictionnaries dict1 maps view_name ->[similar_queries_index] dict2 view_name ->[union of similar queries ] - Clustering
 def queries_view_mapping( queries ):
     query_set = [sql_to_la(querie) for querie in queries] # Transform every Query into list of prj[] jnq[] rgq[]
     similar_queries = find_similar_queries(query_set)  # Hashes Queries and maps similar queries to lists
@@ -151,18 +189,8 @@ def queries_view_mapping( queries ):
 
     return [view_name_view_definition_mapper,view_name_view_queries_mapper,queries]
 
-def combine(list1, list2):
-    output =[]
 
-    for element in list1:
-        output.append(list1)
-    for element in list2:
-        if element not in output :
-            output.append(list2)
-    return output
-
-
-
+#Creates the COMPONENTS of Select and join Statements for the Materialized view by joining select and join statements of all similar queries - Creation
 def view_statements_definition_creation ( view_name_view_definition_mapper ):
 
 
@@ -186,43 +214,7 @@ def view_statements_definition_creation ( view_name_view_definition_mapper ):
     return view_name_view_definition_mapper
 
 
-def join_key_statement ( join_table):
-        tables = join_table.split(',')
-        statement =''
-        for table in tables:
-            table = " ".join(table.split())
-            table_name = table.split(' ')[0]
-
-            #THE CONVENTION IS THAT EACH TABLE IS REFERENCED BY ITS FIRST LETTER AS A CONVENTION
-            key = TPCH_DDL.TPCH_DATABASE[table_name][0]
-            if key.lower() == 'datekey':
-                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.orderdate' +' = ' + table_name[
-                    0] + '.' + key
-            else :
-                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.' + key + ' = ' + table_name[
-                    0] + '.' + key
-
-
-        return statement
-
-def select_statement (select_def ):
-    tmp = ''
-    for column in select_def :
-        seprator = (' , ', '  ')[column == select_def[-1]]
-        if not is_aggregation_op(column):
-
-            tmp+= column + ' as '+ column.replace('.','_')+seprator #Care if last item you need to remove ,
-        else:
-            tmp+=column+seprator
-    return tmp
-
-
-def is_aggregation_op ( statement ):
-    tmp = statement.split('(')
-    return( tmp[0].lower() in ['sum','min','max','avg','count'] )
-
-
-
+#Create final materialized view_code - Creation
 def view_sql_code (view_name_view_definition_mapper,view_name_view_queries_mapper,queries,use_predicate = False ):
     for view_name, view_statements in view_name_view_definition_mapper.items():
         sql_code='create materialized view '+view_name +' as '
@@ -250,3 +242,19 @@ def view_sql_code (view_name_view_definition_mapper,view_name_view_queries_mappe
         view_name_view_definition_mapper[view_name] = sql_code
 
     return view_name_view_definition_mapper
+
+
+
+
+#Final Function - Takes SQL-Commands, one boolean set to False by default to suggest views with or without predicate
+def suggest_materialized_views (commands , view_with_predicat = True) :
+
+     views,view_name_similar_queries_mapper,queries = queries_view_mapping( commands ) #Maps_out view_name -> view_components, View_name -> similar_queries
+
+     view_name_view_definition_mapper = view_statements_definition_creation( views ) #Maps_out view_name -> view_statement_definition
+     view_name_view_code = view_sql_code(view_name_view_definition_mapper,view_name_similar_queries_mapper,queries,view_with_predicat) #Returns the SQL code for Materialize view queries
+     for view_name, view_code in view_name_view_code.items():
+          print(view_name)
+          print(view_code)
+
+     return view_name_view_code,view_name_similar_queries_mapper,queries
