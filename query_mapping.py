@@ -23,6 +23,43 @@ def get_ranges_from_where_statement( wherestatement ) :
 
     return rgq
 
+#Translation of JOIN_COMPONENTS into SQL_CODE - Interpreter
+def join_key_statement ( join_table):
+        tables = join_table.split(',')
+        statement =''
+        for table in tables:
+            table = " ".join(table.split())
+            table_name = table.split(' ')[0]
+
+            #THE CONVENTION IS THAT EACH TABLE IS REFERENCED BY ITS FIRST LETTER AS A CONVENTION
+            key = TPCH_DDL.TPCH_DATABASE[table_name][0]
+            if key.lower() == 'datekey':
+                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.orderdate' +' = ' + table_name[
+                    0] + '.' + key
+            else :
+                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.' + key + ' = ' + table_name[
+                    0] + '.' + key
+
+
+        return statement
+#Translation of JOIN_COMPONENTS into SQL_CODE  - Interpreter
+def select_statement (select_def ):
+    tmp = ''
+    for column in select_def :
+        seprator = (' , ', '  ')[column == select_def[-1]]
+        if not is_aggregation_op(column):
+
+            tmp+= column + ' as '+ column.replace('.','_')+seprator #Care if last item you need to remove ,
+        else:
+            tmp+=column+seprator
+    return tmp
+
+#Checks if a statement is has an aggregation operation - Interpreter
+def is_aggregation_op ( statement ):
+    tmp = statement.split('(')
+    return( tmp[0].lower() in ['sum','min','max','avg','count'] )
+
+
 #This function uses sqlparse to parse sql statement and extract projections, restrictions and joins - Interpreter
 def sql_to_la( sqlquery , keep_where_statement = False) :
     #sql.parse returns a series of tokens
@@ -78,41 +115,7 @@ def sql_to_la( sqlquery , keep_where_statement = False) :
     return prq, jnq, rgq
 
 
-#Translation of JOIN_COMPONENTS into SQL_CODE - Interpreter
-def join_key_statement ( join_table):
-        tables = join_table.split(',')
-        statement =''
-        for table in tables:
-            table = " ".join(table.split())
-            table_name = table.split(' ')[0]
 
-            #THE CONVENTION IS THAT EACH TABLE IS REFERENCED BY ITS FIRST LETTER AS A CONVENTION
-            key = TPCH_DDL.TPCH_DATABASE[table_name][0]
-            if key.lower() == 'datekey':
-                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.orderdate' +' = ' + table_name[
-                    0] + '.' + key
-            else :
-                statement += ' join ' + table_name + ' ' + table_name[0] + ' on ' + 'lo.' + key + ' = ' + table_name[
-                    0] + '.' + key
-
-
-        return statement
-#Translation of JOIN_COMPONENTS into SQL_CODE  - Interpreter
-def select_statement (select_def ):
-    tmp = ''
-    for column in select_def :
-        seprator = (' , ', '  ')[column == select_def[-1]]
-        if not is_aggregation_op(column):
-
-            tmp+= column + ' as '+ column.replace('.','_')+seprator #Care if last item you need to remove ,
-        else:
-            tmp+=column+seprator
-    return tmp
-
-#Checks if a statement is has an aggregation operation - Interpreter
-def is_aggregation_op ( statement ):
-    tmp = statement.split('(')
-    return( tmp[0].lower() in ['sum','min','max','avg','count'] )
 
 
 
@@ -253,8 +256,6 @@ def suggest_materialized_views (commands , view_with_predicat = True) :
 
      view_name_view_definition_mapper = view_statements_definition_creation( views ) #Maps_out view_name -> view_statement_definition
      view_name_view_code = view_sql_code(view_name_view_definition_mapper,view_name_similar_queries_mapper,queries,view_with_predicat) #Returns the SQL code for Materialize view queries
-     for view_name, view_code in view_name_view_code.items():
-          print(view_name)
-          print(view_code)
+
 
      return view_name_view_code,view_name_similar_queries_mapper,queries

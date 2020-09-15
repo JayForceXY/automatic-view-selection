@@ -1,4 +1,4 @@
-CREATE EXTERNAL TABLE tpch.customer (
+CREATE EXTERNAL TABLE customer (
     custkey int,
     name varchar(25),
     address varchar(25),
@@ -7,7 +7,7 @@ CREATE EXTERNAL TABLE tpch.customer (
     region varchar(12),
     phone varchar(15),
     mktsegment varchar(10)
-) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.supplier (
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE supplier (
     suppkey int,
     name varchar(25),
     address varchar(25),
@@ -15,7 +15,9 @@ CREATE EXTERNAL TABLE tpch.customer (
     nation varchar(15),
     region varchar(12),
     phone varchar(15)
-) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.part (
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';
+
+CREATE EXTERNAL TABLE part (
     partkey int,
     name varchar(22),
     mfgr varchar(6),
@@ -25,17 +27,9 @@ CREATE EXTERNAL TABLE tpch.customer (
     type varchar(25),
     size int,
     container varchar(10)
-) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.date_dim (
-    datekey int,
-    datestandard varchar(10),
-    `date` varchar(18),
-    weeknuminyear int,
-    monthnuminyear int,
-    `year` int,
-    daynuminmonth int,
-    yearmonthnum int,
-    yearmonth varchar(7)
-) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.time_dim (timekey varchar(4), hour int, minutes int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';CREATE EXTERNAL TABLE tpch.lineorder (
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';
+
+CREATE EXTERNAL TABLE lineorder (
     orderkey int,
     linenumber int,
     custkey int,
@@ -55,3 +49,27 @@ CREATE EXTERNAL TABLE tpch.customer (
     shipmode varchar(10)
 ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';
 
+
+
+
+
+    CREATE TABLE date_dim
+(
+  datekey            int ,
+  `date`               VARCHAR(19) ,
+  dayofweek          VARCHAR(10) ,
+  `month`              VARCHAR(10) ,
+  `year`               int ,
+  yearmonthnum       int ,
+  yearmonth          VARCHAR(8) ,
+  daynuminweek       int ,
+  daynuminmonth      int ,
+  daynuminyear       int ,
+  monthnuminyear     int ,
+  weeknuminyear      int ,
+  sellingseason      VARCHAR(13) ,
+  lastdayinweekfl    VARCHAR(1) ,
+  lastdayinmonthfl   VARCHAR(1) ,
+  holidayfl          VARCHAR(1) ,
+  weekdayfl          VARCHAR(1)
+)ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';
