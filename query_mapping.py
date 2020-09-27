@@ -1,6 +1,7 @@
 import sqlparse
 import TPCH_DDL
-
+import re
+import query_binary_mapping
 
 #This function gets a where statement and extracts the columns used - Internpreter
 def get_ranges_from_where_statement( wherestatement ) :
@@ -259,3 +260,51 @@ def suggest_materialized_views (commands , view_with_predicat = True) :
 
 
      return view_name_view_code,view_name_similar_queries_mapper,queries
+
+
+def suggest_materialized_views_clustering_approach( commands, view_with_predicat=True ) :
+    views, view_name_similar_queries_mapper, queries = query_binary_mapping.queries_view_mapping(commands) # Maps_out view_name -> view_components, View_name -> similar_queries
+
+    view_name_view_definition_mapper = view_statements_definition_creation ( views )  # Maps_out view_name -> view_statement_definition
+    view_name_view_code = view_sql_code ( view_name_view_definition_mapper, view_name_similar_queries_mapper, queries,
+                                          view_with_predicat )  # Returns the SQL code for Materialize view queries
+
+    return view_name_view_code, view_name_similar_queries_mapper, queries
+
+
+# To Add an optional module of query re-writing
+
+def query_rewriting(views_code,views_queries,queries):
+    translated_queries_dict = dict()
+    for view_name, view_code in views_code.items ( ) :
+
+
+        # print ( "queries of " + view_name )
+        queries_translated_for_view = ''
+        for q in views_queries[view_name] :  # Query_rewrtiting_module
+            # print(queries[q])
+            select, join, where = sql_to_la ( queries[q], True )
+            # print(select)
+            # print ( '= ORIGINAL QUERY = ' )
+            # print ( queries[q] )
+            groupby_orderby = ''
+            select = ','.join ( select )
+            select = select.replace ( '.', '_' )
+            where = ','.join ( where )
+            if 'group by' in queries[q] :
+                groupby_orderby = queries[q].split ( 'group by' )
+                # print('1=', groupby_orderby)
+                groupby_orderby = groupby_orderby[-1]
+                # print ( '2=', groupby_orderby )
+                groupby_orderby = groupby_orderby.replace ( '.', '_' )
+                # print ( '3=', groupby_orderby )
+                groupby_orderby = ' group by ' + groupby_orderby
+                # print('4=',groupby_orderby)
+            where = where.replace ( '.', '_' )
+
+            select = re.sub ( r"sum.*as", 'sum(', select )
+
+            queries_translated_for_view += 'select ' + select + ' from ' + view_name + ' ' + where + groupby_orderby
+            # print(queries_translated_for_view)
+        translated_queries_dict[view_name] = queries_translated_for_view
+    return views_code,translated_queries_dict,queries

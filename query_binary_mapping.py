@@ -2,6 +2,9 @@ import sqlparse
 import query_mapping
 import TPCH_DDL
 import re
+from scipy.cluster.hierarchy import weighted, fcluster
+from scipy.spatial.distance import pdist
+
 def binary_mapping_table(table_attributes,r_attributes,initials):
     table_attributes = table_attributes[::-1]
     bmf=[]
@@ -114,3 +117,71 @@ def detect_aggregation (prj):
         if argument.split('(')[0] in ['sum','min','max','avg','count']: agg.append(argument)
         else : prj_updated.append(argument)
     return  prj_updated, agg
+
+def clustering_queries (query_set):
+    clustering = []
+    for command in query_set :
+        prj, jnq, rgq = query_mapping.sql_to_la ( command )
+        prj, agg = detect_aggregation ( prj )
+
+        clustering.append ( binary_mapping_query ( command ) )
+    y = pdist ( clustering )
+    Z = weighted ( y )
+    results = fcluster(Z,  2.6 , criterion='distance')
+    mapping_similarity = dict()
+    i = 0
+    for cluster in results:
+        if hash ( cluster ) in mapping_similarity :
+            mapping_similarity[hash ( cluster )].append ( i )
+        else :
+            mapping_similarity[hash ( cluster )] = [i]
+
+        i+=1
+    return mapping_similarity
+
+def queries_view_mapping( queries ):
+    query_set = [query_mapping.sql_to_la(querie) for querie in queries] # Transform every Query into list of prj[] jnq[] rgq[]
+    similar_queries = clustering_queries ( queries )  # Hashes Queries and maps similar queries to lists
+    similar_queries_indexes = similar_queries.values ( )  # Returns a list ( List (similar queries indexes ) )
+    views_and_queries = []
+    views = []
+    view_name=''
+    view_name_view_definition_mapper = dict()
+    view_name_view_queries_mapper = dict()
+    i = 0
+
+    for  similar_queries_index in similar_queries_indexes :
+        view_jnq = []
+        view_prq = []
+        view_rgq = []
+        for q in similar_queries_index:
+            tmp_view_prq, tmp_view_jnq,tmp_view_rgq = query_set[q]
+
+
+            if tmp_view_prq:
+                items = tmp_view_prq[0].split(',')
+            for item in items:
+                # print('item ==', item)
+                if item not in view_prq : view_prq.append(item)
+
+            if tmp_view_jnq :
+                items = tmp_view_jnq
+            for item in items :
+                if item not in view_jnq : view_jnq.append ( item )
+
+            if tmp_view_rgq:
+
+
+                items = tmp_view_rgq
+
+            for item in items :
+                if item not in view_rgq : view_rgq.append ( item )
+
+        views.append([view_prq,view_jnq,view_rgq])
+        view_name = 'View'+ str(i)
+        i+=1
+        view_name_view_definition_mapper[view_name] = [view_prq,view_jnq,view_rgq]
+        view_name_view_queries_mapper[view_name] = similar_queries_index
+
+    return [view_name_view_definition_mapper,view_name_view_queries_mapper,queries]
+

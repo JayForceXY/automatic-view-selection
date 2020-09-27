@@ -14,7 +14,7 @@ import TPCH_DDL
 # input_file = sys.argv[1]
 # use_predicate = sys.argv[2] == 'yes'
 
-input_file = 'batch_queries2.sql'
+input_file = 'batch_queries3.sql'
 use_predicate = True
 
 fd = open ( input_file, 'r' )
@@ -32,7 +32,16 @@ for command in commands:
 
 y = pdist(clustering)
 Z = weighted(y)
-print(fcluster(Z,  2.6 , criterion='distance'))
+views_code, views_queries , queries = query_mapping.suggest_materialized_views_clustering_approach(commands,not use_predicate)
+views_code,translated_queries,queries_set = query_mapping.query_rewriting(views_code=views_code,views_queries=views_queries,queries=queries)
+for view in views_code:
+    print(view)
+    print(views_code[view])
+    print(' == Original Queries  == ')
+    for q in views_queries[view]:
+        print(queries_set[q])
+    print(' == Translated Quereis == ')
+    print( translated_queries[view].replace(';','\n'))
 
 
 
