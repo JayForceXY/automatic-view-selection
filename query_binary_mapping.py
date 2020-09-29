@@ -5,6 +5,7 @@ import re
 from scipy.cluster.hierarchy import weighted, fcluster
 from scipy.spatial.distance import pdist
 
+#Function of Binary marrping for a Table BMf returns 1 if the attribute is in the query 0 if not
 def binary_mapping_table(table_attributes,r_attributes,initials):
     table_attributes = table_attributes[::-1]
     bmf=[]
@@ -42,7 +43,7 @@ def binary_mapping_agg ( agg ):
     return binary_mapping_opp_code,binary_mapping_operands
 
 
-
+#Function for query q returns the binary mapping of aggregation, projection, join and range
 def binary_mapping_query (query):
     prj, jnq, rgq = query_mapping.sql_to_la ( query )
     prj,agg = detect_aggregation(prj)
@@ -61,6 +62,7 @@ def binary_mapping_query (query):
     d=  binary_mapping_opp_code+binary_mapping_operands+projection_binary_mapping+join_binary_mapping+restriction_binary_mapping
     return d
 
+#These functions are for the coding style of the queries
 def which_initals_for ( table ) :
     if table =='customer' :
         initial = 'c.'
@@ -107,7 +109,7 @@ def which_table_is (attribute):
     return table
 
 
-
+#detecting aggragation statement
 def detect_aggregation (prj):
     prj_updated = []
     agg = []
@@ -118,6 +120,8 @@ def detect_aggregation (prj):
         else : prj_updated.append(argument)
     return  prj_updated, agg
 
+
+#For a set of queries, apply binary mapping and then cluster them using WPGMA algorithm
 def clustering_queries (query_set):
     clustering = []
     for command in query_set :
@@ -139,6 +143,8 @@ def clustering_queries (query_set):
         i+=1
     return mapping_similarity
 
+
+#This function takes queries set, find similar queries and creates 2 dictionnaries dict1 maps view_name ->[similar_queries_index] dict2 view_name ->[union of similar queries ] - Clustering
 def queries_view_mapping( queries ):
     query_set = [query_mapping.sql_to_la(querie) for querie in queries] # Transform every Query into list of prj[] jnq[] rgq[]
     similar_queries = clustering_queries ( queries )  # Hashes Queries and maps similar queries to lists

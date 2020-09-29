@@ -31,3 +31,22 @@ select c.city,c.name, s.city, d.year, sum(lo.revenue) as revenue from lineorder 
 select sum(lo.revenue) as revenue, d.year, p.brand1 from lineorder lo join date_dim d on lo.orderdate = d.datekey join part p on lo.partkey = p.partkey join supplier s on lo.suppkey = s.suppkey where p.brand1 between 'MFGR#2221' and 'MFGR#2228' and s.region = 'ASIA' group by d.year, p.brand1 order by d.year, p.brand1; 
 
 select sum(lo.extendedprice * lo.discount) as revenue from lineorder lo join date_dim d on lo.orderdate = d.datekey where d.year = 1993 and lo.discount between 1 and 3 and lo.quantity < 25;
+
+
+select sum(lo.revenue) as revenue, d.year, p.brand1 from lineorder lo join date_dim d on lo.orderdate = d.datekey join part p on lo.partkey = p.partkey join supplier s on lo.suppkey = s.suppkey where s.region = 'ASIA' group by d.year, p.brand1 order by d.year, p.brand1;
+
+select sum(lo.extendedprice * lo.discount) as revenue from lineorder lo join date_dim d on lo.orderdate = d.datekey where d.yearmonthnum = 199402  and lo.quantity between 26 and 35;
+
+select c.nation, s.nation, d.year, sum(lo.revenue) as revenue from lineorder lo join customer c on lo.custkey = c.custkey join supplier s on lo.suppkey = s.suppkey join date_dim d on lo.orderdate = d.datekey where c.region = 'ASIA' and d.year >= 1992 and d.year <= 1997 group by c.nation, s.nation, d.year order by d.year asc, revenue desc;
+select c.nation, s.nation, d.year, sum(lo.revenue) as revenue from lineorder lo join customer c on lo.custkey = c.custkey join supplier s on lo.suppkey = s.suppkey join date_dim d on lo.orderdate = d.datekey where s.region = 'ASIA' and d.year >= 1992 and d.year <= 1997 group by c.nation, s.nation, d.year order by d.year asc, revenue desc;
+
+
+select sum(lo.extendedprice * lo.discount) as revenue from lineorder lo join date_dim d on lo.orderdate = d.datekey where d.year = 1993;
+
+
+
+select sum(lo.revenue) as revenue, d.year, p.brand1 from lineorder lo join date_dim d on lo.orderdate = d.datekey join part p on lo.partkey = p.partkey join supplier s on lo.suppkey = s.suppkey where s.region = 'AMERICA' group by d.year, p.brand1 order by d.year, p.brand1;
+
+
+
+select sum(lo.revenue) as revenue, d.year, p.brand1 from lineorder lo join supplier s on lo.suppkey = s.suppkey join date_dim d on lo.orderdate = d.datekey join part p on lo.partkey = p.partkey  where s.nation = 'FRANCE' group by d.year, p.brand1 order by d.year, p.brand1;
