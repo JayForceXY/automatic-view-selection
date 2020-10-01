@@ -221,7 +221,9 @@ def view_statements_definition_creation ( view_name_view_definition_mapper ):
 #Create final materialized view_code - Creation
 def view_sql_code (view_name_view_definition_mapper,view_name_view_queries_mapper,queries,use_predicate = False ):
     for view_name, view_statements in view_name_view_definition_mapper.items():
-        sql_code='create materialized view '+view_name +' as '
+        p = ('','_predicate')[use_predicate]
+
+        sql_code='create materialized view '+view_name+p +' as '
 
         select_arguments = select_statement(view_statements[0][0])
         join_arguments = ','.join ( view_statements[0][1] )

@@ -23,7 +23,7 @@ commands = sqlparse.split ( sqlFile )
 commands = [x for x in commands if x]
 clustering = []
 
-views_code, views_queries , queries = query_mapping.suggest_materialized_views_clustering_approach(commands,not use_predicate)
+views_code, views_queries , queries = query_mapping.suggest_materialized_views_clustering_approach(commands, use_predicate)
 views_code,translated_queries,queries_set = query_mapping.query_rewriting(views_code=views_code,views_queries=views_queries,queries=queries)
 
 for view in views_code:

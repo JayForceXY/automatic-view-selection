@@ -53,23 +53,28 @@ CREATE EXTERNAL TABLE lineorder (
 
 
 
+  CREATE EXTERNAL TABLE date_dim (datekey int, datestandard varchar(10), `date` varchar(18), weeknuminyear int, monthnuminyear int,
+    year int, daynuminmonth int, yearmonthnum int, yearmonth varchar(7)) ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';
+
+
+
     CREATE TABLE date_dim
-(
-  datekey            int ,
-  `date`               VARCHAR(19) ,
-  dayofweek          VARCHAR(10) ,
-  `month`              VARCHAR(10) ,
-  `year`               int ,
-  yearmonthnum       int ,
-  yearmonth          VARCHAR(8) ,
-  daynuminweek       int ,
-  daynuminmonth      int ,
-  daynuminyear       int ,
-  monthnuminyear     int ,
-  weeknuminyear      int ,
-  sellingseason      VARCHAR(13) ,
-  lastdayinweekfl    VARCHAR(1) ,
-  lastdayinmonthfl   VARCHAR(1) ,
-  holidayfl          VARCHAR(1) ,
-  weekdayfl          VARCHAR(1)
-)ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';
+-(
+-  datekey            int ,
+-  `date`               VARCHAR(19) ,
+-  dayofweek          VARCHAR(10) ,
+-  `month`              VARCHAR(10) ,
+-  `year`               int ,
+-  yearmonthnum       int ,
+-  yearmonth          VARCHAR(8) ,
+-  daynuminweek       int ,
+-  daynuminmonth      int ,
+-  daynuminyear       int ,
+-  monthnuminyear     int ,
+-  weeknuminyear      int ,
+-  sellingseason      VARCHAR(13) ,
+-  lastdayinweekfl    VARCHAR(1) ,
+-  lastdayinmonthfl   VARCHAR(1) ,
+-  holidayfl          VARCHAR(1) ,
+-  weekdayfl          VARCHAR(1)
+-)ROW FORMAT DELIMITED FIELDS TERMINATED BY '|';
